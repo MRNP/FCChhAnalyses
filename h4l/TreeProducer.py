@@ -23,6 +23,8 @@ class TreeProducer(Analyzer):
         bookParticle(self.tree, 'l2')
         bookParticle(self.tree, 'l3')
         bookParticle(self.tree, 'l4')
+        bookParticle(self.tree, 'Jets1')
+        bookParticle(self.tree, 'bJets1')
         bookMet(self.tree, 'met')
 
         self.tree.var('nljets', float)
@@ -36,6 +38,8 @@ class TreeProducer(Analyzer):
         zeds = getattr(event, self.cfg_ana.zeds)
         zeds.sort(key=lambda x: abs(x.m()-91.))
         higgses = getattr(event, self.cfg_ana.higgses)
+        selected_bs = getattr(event, self.cfg_ana.selected_bs)
+        selected_lights = getattr(event, self.cfg_ana.selected_lights)
         leptons = []
 
 
@@ -64,6 +68,13 @@ class TreeProducer(Analyzer):
 	    self.tree.fill('nbjets' , len(event.selected_bs) )
             self.tree.fill('nljets' , len(event.selected_lights) )
             self.tree.fill('njets' , len(event.selected_lights) + len(event.selected_bs))
+
+            if len(event.selected_lights) > 0:
+              fillParticle(self.tree, 'Jets1', event.selected_lights[0])
+            if len(event.selected_bs) > 0:
+              fillParticle(self.tree, 'bJets1', event.selected_bs[0])
+
+
 
             self.tree.tree.Fill()
         
