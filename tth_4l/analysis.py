@@ -11,10 +11,10 @@ logging.basicConfig(level=logging.WARNING)
 sys.path.append('/afs/cern.ch/work/h/helsens/public/FCCDicts/')
 
 
-#comp = cfg.Component(
-#    'example',
-#     #files = ["root://eospublic.cern.ch//eos/fcc/hh/generation/DelphesEvents/decay/pp_h012j_5f_zz/events997.root"]
-#     files = ["heppy/FCChhAnalyses/tth_4l/events0.root"]
+comp = cfg.Component(
+    'example',
+     #files = ["root://eospublic.cern.ch//eos/fcc/hh/generation/DelphesEvents/decay/pp_h012j_5f_zz/events997.root"]
+     files = ["heppy/FCChhAnalyses/tth_4l/events0.root"]
 )
 
 from heppySampleList_fcc_v01 import *
@@ -22,12 +22,38 @@ from heppySampleList_fcc_v01 import *
 selectedComponents = [
                 pp_tth01j_5f_hllll,
                 pp_tt4l_4f,
+                pp_ttv01j_5f,
+                pp_h012j_5f_hllll,
+                pp_vh012j_5f_hllll,
+                pp_vv012j_5f,
+                pp_vvv01j_5f,
+                pp_www_4f,
+                pp_wwwz_4f,
+                pp_wwzz_4f,
+                pp_wzz_5f,
+                pp_wzzz_5f,
+                pp_zzz_5f,
+                pp_zzzz_5f,
                       ]
 
 
-pp_tth01j_5f_hllll,.splitFactor = 10
-pp_tt4l_4f.splitFactor = 10
+pp_tth01j_5f_hllll.splitFactor = 50
+pp_tt4l_4f.splitFactor = 50
+pp_ttv01j_5f.splitFactor=50
+pp_h012j_5f_hllll.splitFactor=50
+pp_vh012j_5f_hllll.splitFactor=50
+pp_vv012j_5f.splitFactor=50
+pp_vvv01j_5f.splitFactor=50
+pp_www_4f.splitFactor=50
+pp_wwwz_4f.splitFactor=50
+pp_wwzz_4f.splitFactor=50
+pp_wzz_5f.splitFactor=50
+pp_wzzz_5f.splitFactor=50
+pp_zzz_5f.splitFactor=50
+pp_zzzz_5f.splitFactor=50
 
+
+#selectedComponents = comp
 
 from heppy.analyzers.fcc.Reader import Reader
 source = cfg.Analyzer(
