@@ -16,17 +16,17 @@ sample=imp.load_source('heppylist', '/afs/cern.ch/work/h/helsens/public/FCCDicts
 comps = cfg.Component(
     'mgp8_pp_tth01j_5f_hllll',
      # copied from eos, change according to needs
-     files = ["heppy/FCChhAnalyses/tth_4l/local/mgp8_pp_tth01j_5f_hllll/events_000001000.root"]
+     files = ["heppy/FCChhAnalyses/FCChh/tth_4l/local/mgp8_pp_tth01j_5f_hllll/events_000001000.root"]
 )
 compb1 = cfg.Component(
     'mgp8_pp_wwww_4f',
      # copied from eos, change according to needs
-     files = ["heppy/FCChhAnalyses/tth_4l/local/mgp8_pp_wwww_4f/events_000000021.root"]
+     files = ["heppy/FCChhAnalyses/FCChh/tth_4l/local/mgp8_pp_wwww_4f/events_000000021.root"]
 )
 compb2 = cfg.Component(
     'mgp8_pp_ttv01j_5f',
      # copied from eos, change according to needs
-     files = ["heppy/FCChhAnalyses/tth_4l/local/mgp8_pp_ttv01j_5f/events_000000176.root"]
+     files = ["heppy/FCChhAnalyses/FCChh/tth_4l/local/mgp8_pp_ttv01j_5f/events_000000176.root"]
 )
 
 
@@ -42,7 +42,7 @@ sample.mgp8_pp_tth01j_5f_hllll.splitFactor = 10
 sample.mgp8_pp_ttv01j_5f.splitFactor = 10
 
 # to run locally
-#selectedComponents = [comps, compb2]
+selectedComponents = [comps, compb2]
 
 from heppy.FCChhAnalyses.analyzers.Reader import Reader
 
