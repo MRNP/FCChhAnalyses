@@ -26,6 +26,8 @@ int main(int argc, char* argv[]){
    }
    TFile f1(fname.c_str());
 
+   std::cout << "Read file " << fname << std::endl;
+
    // fcc edm libraries
    // f1.MakeProject("dictsDelphes", "*", "RECREATE+");
    gSystem->Load("dictsDelphes/dictsDelphes.so");
@@ -34,14 +36,16 @@ int main(int argc, char* argv[]){
    using floats = ROOT::Experimental::VecOps::TVec<float>;
    using u_ints = ROOT::Experimental::VecOps::TVec<unsigned int>;
    
+   std::cout << "Creating TDataFrame ..." << std::endl;
    ROOT::Experimental::TDataFrame df("events", fname);
+   auto d_0_30 = df.Range(0, 10);
 
    auto getPts = [](floats &pxs, floats &pys){
        auto all_pts = sqrt(pxs * pxs + pys * pys);
        return all_pts;
    };
 
-   // Apply simple selectors
+   std::cout << "Apply simple selectors ..." << std::endl;
    auto selectors = df.Define("j_pts", getPts, {"pfjets04.core.p4.px", "pfjets04.core.p4.py"})
                       .Define("m_pts", getPts, {"muons.core.p4.px", "muons.core.p4.py"})
                       .Define("e_pts", getPts, {"electrons.core.p4.px", "electrons.core.p4.py"})
@@ -67,19 +71,19 @@ int main(int argc, char* argv[]){
    //                        .Define("e_sumpt", get_sumpt, {"e_pts"})
    //                ;
    //
-   auto getVects = [](floats &pxs, floats &pys, floats &pzs){
-      ROOT::Experimental::VecOps::TVec<TVector3> all_vects;
-      for(int i=0; i<pxs.size(); ++i){
-         all_vects.emplace_back(TVector3(pxs[i], pys[i], pzs[i]));
-      }
-      return all_vects;
-   };
+   //auto getVects = [](floats &pxs, floats &pys, floats &pzs){
+   //   ROOT::Experimental::VecOps::TVec<TVector3> all_vects;
+   //   for(int i=0; i<pxs.size(); ++i){
+   //      all_vects.emplace_back(TVector3(pxs[i], pys[i], pzs[i]));
+   //   }
+   //   return all_vects;
+   //};
 
-   // New df to quickly identify problems
-   auto vectors = df.Define("j_vects", getVects, {"pfjets04.core.p4.px", "pfjets04.core.p4.py", "pfjets04.core.p4.pz"})
-                    .Define("e_vects", getVects, {"electrons.core.p4.px", "electrons.core.p4.py", "electrons.core.p4.pz"})
-                    .Define("m_vects", getVects, {"muons.core.p4.px", "muons.core.p4.py", "muons.core.p4.pz"})
-                 ;
+   //// New df to quickly identify problems
+   //auto vectors = df.Define("j_vects", getVects, {"pfjets04.core.p4.px", "pfjets04.core.p4.py", "pfjets04.core.p4.pz"})
+   //                 .Define("e_vects", getVects, {"electrons.core.p4.px", "electrons.core.p4.py", "electrons.core.p4.pz"})
+   //                 .Define("m_vects", getVects, {"muons.core.p4.px", "muons.core.p4.py", "muons.core.p4.pz"})
+   //              ;
 
   // TODO: port LeptonicHiggsbuilder to c++
 
@@ -104,7 +108,9 @@ int main(int argc, char* argv[]){
    //
 
    // TODO: Output to flat tree
-
+   //
+   std::cout << "Writing snapshot to disk ..." << std::endl;
+   selectors.Snapshot("events", "tree.root");
    app.Run();
    return 0;
 }
