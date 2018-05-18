@@ -15,7 +15,6 @@
 // Test to reproduce Heppy analysis
 int main(int argc, char* argv[]){
 
-   TApplication app("app", nullptr, nullptr);
 
    // get input file from command line
    std::string fname;
@@ -29,8 +28,9 @@ int main(int argc, char* argv[]){
    std::cout << "Read file " << fname << std::endl;
 
    // fcc edm libraries
-   // f1.MakeProject("dictsDelphes", "*", "RECREATE+");
+   f1.MakeProject("dictsDelphes", "*", "RECREATE+");
    gSystem->Load("dictsDelphes/dictsDelphes.so");
+   //gSystem->Load("libdatamodel.so");
 
    using ints   = ROOT::Experimental::VecOps::TVec<int>;
    using floats = ROOT::Experimental::VecOps::TVec<float>;
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]){
    
    std::cout << "Creating TDataFrame ..." << std::endl;
    ROOT::Experimental::TDataFrame df("events", fname);
-   auto d_0_30 = df.Range(0, 10);
+   //auto d_0_30 = df.Range(0, 10);
 
    auto getPts = [](floats &pxs, floats &pys){
        auto all_pts = sqrt(pxs * pxs + pys * pys);
@@ -46,10 +46,8 @@ int main(int argc, char* argv[]){
    };
 
    std::cout << "Apply simple selectors ..." << std::endl;
-   auto selectors = df.Define("j_pts", getPts, {"pfjets04.core.p4.px", "pfjets04.core.p4.py"})
-                      .Define("m_pts", getPts, {"muons.core.p4.px", "muons.core.p4.py"})
+   auto selectors = df.Define("m_pts", getPts, {"muons.core.p4.px", "muons.core.p4.py"})
                       .Define("e_pts", getPts, {"electrons.core.p4.px", "electrons.core.p4.py"})
-                      .Define("j_pts_30", "j_pts[j_pts > 30]") // selector: jets_30
                       .Define("e_pts_30", "e_pts[e_pts > 30]") // selector: sel_electrons
                       .Define("m_pts_30", "m_pts[m_pts > 30]") // selector: sel_muons
                     ;
@@ -110,7 +108,6 @@ int main(int argc, char* argv[]){
    // TODO: Output to flat tree
    //
    std::cout << "Writing snapshot to disk ..." << std::endl;
-   selectors.Snapshot("events", "tree.root");
-   app.Run();
+   selectors.Snapshot("events", "tree.root", {"e_pts_30", "e_pts_30"} );
    return 0;
 }
