@@ -39,32 +39,13 @@ int main(int argc, char* argv[]){
    //f1.MakeProject("dictsDelphes", "*", "RECREATE+");
    //gSystem->Load("dictsDelphes/dictsDelphes.so");
 
-   using ints   = ROOT::Experimental::VecOps::TVec<int>;
-   //using fourvectors   = ROOT::Experimental::VecOps::TVec<TLorentzVector>;
-   using fourvectors   = std::vector<TLorentzVector>;
-   using floats = ROOT::Experimental::VecOps::TVec<float>;
-   using u_ints = ROOT::Experimental::VecOps::TVec<unsigned int>;
-   //using particles = ROOT::Experimental::VecOps::TVec<fcc::ParticleData>;
    
    std::cout << "Creating TDataFrame ..." << std::endl;
    ROOT::Experimental::TDataFrame df("events", fname);
+
+   // Range issue: 
    //auto d_0_30 = df.Range(0, 10);
    //
-   
-   auto getInvMass = [] (floats& pxs, floats& pys, floats& pzs, floats& pes) {
-     return sqrt(pes*pes - pxs*pxs - pys*pys - pzs * pzs);
-     };
-
-   auto getPts = [](floats &pxs, floats &pys){
-       auto all_pts = sqrt(pxs * pxs + pys * pys);
-       //std::cout << pxs[0] << "\t" << pxs.size() << std::endl;
-       return all_pts;
-   };
-
-   auto getVecSize = [](ints& pxs) -> Int_t{
-       return (Int_t)pxs.size();
-   };
-
 
    auto selectLeptons = [](std::vector<fcc::ParticleData> in, std::vector<fcc::TaggedParticleData> iso) {
     std::vector<fcc::ParticleData> result;
@@ -81,46 +62,6 @@ int main(int argc, char* argv[]){
     return result;
    };
 
-   auto getFourVectorWithCut = [](floats& pxs, floats& pys, floats& pzs, floats& pes, floats& iso) {
-      fourvectors fv;
-       for (int i = 0; i < pxs.size(); ++i) {
-         if ((sqrt(pxs[i] * pxs[i] + pys[i] * pys[i]) > 20) && (iso[i] < 0.4)) {
-
-          fv.emplace_back();
-          fv.back().SetXYZM(pxs[i], pys[i], pzs[i], pes[i]);
-         }
-       }
-       return fv;
-   };
-   auto getChargewithCut = [](ints& charge, floats& pxs, floats& pys, floats& iso) {
-     ints chargewithcut;
-     for (int i = 0; i < charge.size(); i++) {
-       if ((sqrt(pxs[i]*pxs[i] + pys[i]*pys[i]) > 20.) && (iso[i] < 0.4)) {
-         chargewithcut.emplace_back(charge[i]);
-       }
-
-     }
-
-    return chargewithcut;
-   };
-
-   auto getPtFromFourVector = [](fourvectors & fv) ->floats {
-     floats pts;
-      for (int i = 0; i < fv.size(); ++i) {
-        pts.emplace_back(fv[i].Pt());
-      }
-      return pts;
-
-   };
-   auto getMassFromFourVector = [](fourvectors & fv) ->floats {
-     floats pts;
-      for (int i = 0; i < fv.size(); ++i) {
-        pts.emplace_back(fv[i].M());
-      }
-      return pts;
-
-   };
-
 
 
    auto getPts2 = [](std::vector<fcc::ParticleData> in){
@@ -129,14 +70,6 @@ int main(int argc, char* argv[]){
          result.push_back(sqrt(in[i].core.p4.px * in[i].core.p4.px + in[i].core.p4.py * in[i].core.p4.py));
        }
        return result;
-   };
-
-   auto id = [](floats &pxs){
-       return pxs;
-   };
-
-   auto id3 = [](std::vector<float> pxs){
-       return pxs;
    };
 
    auto id2 = [](std::vector<fcc::ParticleData> x) {
@@ -152,73 +85,92 @@ int main(int argc, char* argv[]){
 
    };
 
-    //auto findZLegs = [](ints& echarge, ints& mcharge) {
-    //std::vector<bool> sel(n);
-    //
-    //}
+  auto LeptonicZBuilder = [](std::vector<fcc::ParticleData> leptons) {
+
+        std::vector<fcc::ParticleData> result;
+        int n = leptons.size();
+        if (n >2) {
+          std::vector<bool> v(n);
+          std::fill(v.end() - 2, v.end(), true);
+          do {
+            fcc::ParticleData zed;
+            zed.core.pdgId = 23;
+            TLorentzVector zed_lv; 
+            for (int i = 0; i < n; ++i) {
+                if (v[i]) {
+                  zed.core.charge += leptons[i].core.charge;
+                  TLorentzVector lepton_lv;
+                  lepton_lv.SetXYZM(leptons[i].core.p4.px, leptons[i].core.p4.py, leptons[i].core.p4.pz, leptons[i].core.p4.mass);
+                  zed_lv += lepton_lv;
+                }
+            }
+            zed.core.p4.px = zed_lv.Px();
+            zed.core.p4.py = zed_lv.Py();
+            zed.core.p4.pz = zed_lv.Pz();
+            zed.core.p4.mass = zed_lv.M();
+            result.emplace_back(zed);
+          
+          } while (std::next_permutation(v.begin(), v.end()));
+        }
+
+    return result;
+  };
+
+  auto LeptonicHiggsBuilder = [](std::vector<fcc::ParticleData> leptons) {
+
+        std::vector<fcc::ParticleData> result;
+        int n = leptons.size();
+        if (n >2) {
+          std::vector<bool> v(n);
+          std::fill(v.end() - 2, v.end(), true);
+          do {
+            fcc::ParticleData zed;
+            zed.core.pdgId = 25;
+            TLorentzVector zed_lv; 
+            for (int i = 0; i < n; ++i) {
+                if (v[i]) {
+                  zed.core.charge += leptons[i].core.charge;
+                  TLorentzVector lepton_lv;
+                  lepton_lv.SetXYZM(leptons[i].core.p4.px, leptons[i].core.p4.py, leptons[i].core.p4.pz, leptons[i].core.p4.mass);
+                  zed_lv += lepton_lv;
+                }
+            }
+            zed.core.p4.px = zed_lv.Px();
+            zed.core.p4.py = zed_lv.Py();
+            zed.core.p4.pz = zed_lv.Pz();
+            zed.core.p4.mass = zed_lv.M();
+            result.emplace_back(zed);
+
+          
+          } while (std::next_permutation(v.begin(), v.end()));
+        }
+
+    if (result.size() > 1) {
+    auto  higgsresonancesort = [] (fcc::ParticleData i ,fcc::ParticleData j) { return (abs( 125. -i.core.p4.mass)<abs(125.-j.core.p4.mass)); };
+    std::sort(result.begin(), result.end(), higgsresonancesort);
+
+    std::vector<fcc::ParticleData>::const_iterator first = result.begin();
+    std::vector<fcc::ParticleData>::const_iterator last = result.begin() + 1;
+    std::vector<fcc::ParticleData> onlyBestHiggs(first, last);
+    return onlyBestHiggs;
+    } else {
+    return result;
+    }
+  };
 
 
 
-   auto buildResonances = [](fourvectors& es, fourvectors & ms, ints& echarge, ints& mcharge) {
-     fourvectors higgses;
-     //// eeee
-     //
-     if (es.size() >  3) {
-       for (int i = 0; i < es.size() - 3; ++i) {
-         for(int j=i+1; j < es.size() - 2; ++j) {
-           for(int k=j+1; k < es.size() - 1; ++k) {
-             for(int l=k+1; l < es.size(); ++l) {
-               if(echarge[i] + echarge[j] + echarge[k] + echarge[l] == 0) {
-                 higgses.push_back(TLorentzVector(es[i] + es[j] + es[k] + es[l]));
-               }
-             }
-           }
-         }
-       }
-     }
-    //// mumumumu
-     if (ms.size() >  3) {
-       for (int i = 0; i < ms.size() - 3; ++i) {
-         for(int j=i+1; j < ms.size() - 2; ++j) {
-           for(int k=j+1; k < ms.size() - 1; ++k) {
-             for(int l=k+1; l < ms.size(); ++l) {
-               if(mcharge[i] + mcharge[j] + mcharge[k] + mcharge[l] == 0) {
-                 higgses.push_back(TLorentzVector(ms[i] + ms[j] + ms[k] + ms[l]));
-               }
-             }
-           }
-         }
-       }
-     }
-    //// eemumu
-     if (ms.size() >  1 && es.size() > 1) {
-       for (int i = 0; i < es.size() - 1; ++i) {
-         for(int j=i+1; j < es.size(); ++j) {
-           for(int k=0; k < ms.size() - 1; ++k) {
-             for(int l=k+1; l < ms.size(); ++l) {
-               if((echarge[i] + echarge[j] == 0) && (mcharge[k] + mcharge[l] == 0)) { 
-               higgses.push_back(TLorentzVector(es[i] + es[j] + ms[k] + ms[l]));
-               }
-             }
-           }
-         }
-       }
-     }
-     auto  higgsresonancesort = [] (TLorentzVector i ,TLorentzVector j) { return (abs( 125. -i.M())<abs(125.-j.M())); };
-     std::sort(higgses.begin(), higgses.end(), higgsresonancesort);
-     fourvectors finalhiggses;
-     if (higgses.size() > 0) {
-       finalhiggses.push_back(TLorentzVector(higgses[0]));
-     }
-     return finalhiggses;
-
-   };
 
    std::cout << "Apply simple selectors ..." << std::endl;
    auto selectors =  df
                       .Define("selected_electrons", selectLeptons, {"electrons", "electronITags"})
                       .Define("selected_muons", selectLeptons, {"muons", "muonITags"})
                       .Define("selected_leptons", mergeElectronsAndMuons, {"selected_electrons", "selected_muons"})
+                      .Define("zeds", LeptonicZBuilder, {"selected_leptons"})
+                      .Define("selected_leptons_pt", getPts2, {"selected_leptons"})
+                      .Define("zeds_pt", getPts2, {"zeds"})
+                      .Define("higgs", LeptonicHiggsBuilder, {"zeds"})
+                      .Define("higgs_pt", getPts2, {"higgs"})
 
 
                     ;
@@ -228,10 +180,14 @@ int main(int argc, char* argv[]){
   selectors.Snapshot("events", "tree.root",
     { 
       
-      "selected_leptons_pt",
-      "selected_electrons",
+      "zeds",
+      "zeds_pt",
       "selected_muons",
       "selected_leptons",
+      "selected_electrons",
+      "selected_leptons_pt",
+      "higgs",
+      "higgs_pt"
       }
     );
 
