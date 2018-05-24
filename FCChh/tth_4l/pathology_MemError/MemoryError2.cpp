@@ -12,8 +12,9 @@
 
 /*
  * Running from lxplus:
- *   source /cvmfs/sft.cern.ch/lcg/views/dev3/latest/x86_64-slc6-gcc62-opt/setup.sh
- *   g++ -g -o analysis heppyAnalysis.cxx `root-config --cflags --glibs` -lROOTVecOps -lROOTDataFrame
+ *   
+ *   # setup environment as in ../init.sh to get fcc libs
+ *   # use Makefile to compile
  */
 
 
