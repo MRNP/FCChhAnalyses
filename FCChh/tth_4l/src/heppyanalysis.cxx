@@ -2,7 +2,6 @@
 #include <ROOT/TDataFrame.hxx>
 #include "TLorentzVector.h"
 #include <TSystem.h>
-#include <ROOT/TVec.hxx>
 
 // FCC event datamodel includes
 //#include "datamodel/MCParticleCollection.h"
