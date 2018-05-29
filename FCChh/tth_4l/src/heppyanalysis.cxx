@@ -1,5 +1,5 @@
 
-#include <ROOT/TDataFrame.hxx>
+#include <ROOT/RDataFrame.hxx>
 #include "TLorentzVector.h"
 #include <TSystem.h>
 
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]){
 
    
    std::cout << "Creating TDataFrame ..." << std::endl;
-   ROOT::Experimental::TDataFrame df("events", fname);
+   ROOT::RDataFrame df("events", fname);
 
    // Range issue: 
    //auto d_0_30 = df.Range(0, 10);
