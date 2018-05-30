@@ -12,6 +12,6 @@ tdataframe_analysis:  heppyanalysis.cxx
 # run the analysis
 
 run:
-	./heppyanalysis /afs/cern.ch/work/v/vavolkl/public/heppy_analysis_samples/heppy/FCChhAnalyses/FCChh/tth_4l/local/mgp8_pp_tth01j_5f_hllll/events_000001000.root
+	./heppyanalysis tree.root /afs/cern.ch/work/v/vavolkl/public/heppy_analysis_samples/heppy/FCChhAnalyses/FCChh/tth_4l/local/mgp8_pp_tth01j_5f_hllll/events_000001000.root
 
 # todo: comparison with expected output  (/afs/cern.ch/work/v/vavolkl/public/heppy_analysis_samples/localtest/mgp8_pp_tth01j_5f_hllll_1/heppy.FCChhAnalyses.FCChh.tth_4l.TreeProducer.TreeProducer_1/tree.root)

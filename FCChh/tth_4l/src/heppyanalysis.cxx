@@ -7,7 +7,11 @@
 //#include "datamodel/MCParticleCollection.h"
 //#include "datamodel/MCParticleData.h"
 #include "datamodel/ParticleData.h"
+#include "datamodel/LorentzVector.h"
+#include "datamodel/JetData.h"
+#include "datamodel/FloatData.h"
 #include "datamodel/TaggedParticleData.h"
+#include "datamodel/TaggedJetData.h"
 
 /*
  * Running from lxplus:
@@ -17,34 +21,47 @@
 
 
 
+double deltaR(fcc::LorentzVector v1, fcc::LorentzVector v2) {
+  TLorentzVector tv1;
+  tv1.SetXYZM(v1.px, v1.py, v1.pz, v1.mass);
+
+  TLorentzVector tv2;
+  tv2.SetXYZM(v2.px, v2.py, v2.pz, v2.mass);
+
+  double deltaPhi = M_PI - std::abs(std::abs(tv1.Phi() - tv2.Phi()) - M_PI);
+  double deltaEta = std::abs(tv1.Eta() - tv2.Eta());
+  double result = std::sqrt(deltaPhi * deltaPhi + deltaEta * deltaEta);
+  return result;
+}
+
 
 // Test to reproduce Heppy analysis
 int main(int argc, char* argv[]){
 
 
-   // get input file from command line
-   std::string fname;
-   if (argc > 1) {
-    fname = argv[1]; 
-   } else { // no command line arguments given, use some default
-     fname = "FCCDelphesOutput.root";
-   }
-   TFile f1(fname.c_str());
 
-   std::cout << "Read file " << fname << std::endl;
 
    // fcc edm libraries
    gSystem->Load("libdatamodel.so");
    //f1.MakeProject("dictsDelphes", "*", "RECREATE+");
    //gSystem->Load("dictsDelphes/dictsDelphes.so");
+   
+
+   std::cout << "Read files.. ";
+   std::vector<std::string> filenames;
+
+   std::string outfilename = argv[1];
+   for (int i = 2; i < argc; ++i) {
+     std::cout << " " << argv[i];
+     filenames.push_back(argv[i]);
+
+
+   }
+   std::cout << std::endl;
 
    
    std::cout << "Creating TDataFrame ..." << std::endl;
-   ROOT::RDataFrame df("events", fname);
-
-   // Range issue: 
-   //auto d_0_30 = df.Range(0, 10);
-   //
+   ROOT::RDataFrame df("events", filenames);
 
    auto selectLeptons = [](std::vector<fcc::ParticleData> in, std::vector<fcc::TaggedParticleData> iso) {
     std::vector<fcc::ParticleData> result;
@@ -61,6 +78,55 @@ int main(int argc, char* argv[]){
     return result;
    };
 
+
+   auto selectJetsBs = [](std::vector<fcc::JetData> in, std::vector<fcc::TaggedJetData> btags) {
+    std::vector<fcc::JetData> result;
+    result.reserve(in.size());
+    for (int i = 0; i < in.size(); ++i) {
+      auto & p = in[i];
+      if (std::sqrt(std::pow(p.core.p4.px,2) + std::pow(p.core.p4.py,2)) > 30) {
+          if (btags[i].tag > 0) {
+            result.emplace_back(p);
+          }
+      }
+    }
+    return result;
+   };
+
+   auto selectJetsLights = [](std::vector<fcc::JetData> in, std::vector<fcc::TaggedJetData> btags) {
+    std::vector<fcc::JetData> result;
+    result.reserve(in.size());
+    for (int i = 0; i < in.size(); ++i) {
+      auto & p = in[i];
+      if (std::sqrt(std::pow(p.core.p4.px,2) + std::pow(p.core.p4.py,2)) > 30) {
+          if (btags[i].tag == 0) {
+            result.emplace_back(p);
+          }
+      }
+    }
+    return result;
+   };
+
+  auto noMatchJets = [](std::vector<fcc::JetData> in, std::vector<fcc::ParticleData> matchParticles) {
+    std::vector<fcc::JetData> result;
+    result.reserve(in.size());
+    for (int i = 0; i < in.size(); ++i) {
+      auto & p = in[i];
+      bool matched = false;
+      for (int j = 0; j < matchParticles.size(); ++j) {
+        auto & matchCandidate = matchParticles[j];
+        if (deltaR(p.core.p4, matchCandidate.core.p4) < 0.2) {
+          matched = true;
+        }
+      }
+      if (matched == false) {
+        result.emplace_back(p);
+      }
+    }
+    return result;
+
+
+    };
 
 
    auto getPts2 = [](std::vector<fcc::ParticleData> in){
@@ -157,7 +223,41 @@ int main(int argc, char* argv[]){
     }
   };
 
+  auto id_float = [](std::vector<fcc::FloatData> x) {
+    std::vector<float> result;
+    for (auto & p: x) {
+      result.push_back(p.value);
 
+    }
+    return result;
+  };
+
+  auto get_mass = [](std::vector<fcc::ParticleData> x) {
+    std::vector<float> result;
+    for (auto & p: x) {
+      result.push_back(p.core.p4.mass);
+    }
+
+    return result;
+  };
+
+  auto get_nparticles = [](std::vector<fcc::ParticleData> x) {
+    int result =  x.size();
+    return result;
+  };
+
+  auto get_njets = [](std::vector<fcc::JetData> x) {
+    int result =  x.size();
+    return result;
+
+
+  };
+
+  auto get_njets2 = [](std::vector<fcc::JetData> x, std::vector<fcc::JetData> y) {
+    int result =  x.size() + y.size();
+    return result;
+
+  };
 
 
    std::cout << "Apply simple selectors ..." << std::endl;
@@ -169,24 +269,44 @@ int main(int argc, char* argv[]){
                       .Define("selected_leptons_pt", getPts2, {"selected_leptons"})
                       .Define("zeds_pt", getPts2, {"zeds"})
                       .Define("higgs", LeptonicHiggsBuilder, {"zeds"})
+                      .Define("higgs_m", get_mass, {{"higgs"}})
                       .Define("higgs_pt", getPts2, {"higgs"})
+                      .Define("jets_30_bs", selectJetsBs, {"pfjets04", "pfbTags04"})
+                      .Define("jets_30_lights", selectJetsLights, {"pfjets04", "pfbTags04"})
+                      .Define("selected_bs", noMatchJets, {"jets_30_bs", "selected_leptons"})
+                      .Define("selected_lights", noMatchJets, {"jets_30_lights", "selected_leptons"})
+                      .Define("nbjets", get_njets, {"selected_bs"})
+                      .Define("njets", get_njets2, {"selected_bs", "selected_lights"})
+                      .Define("weight", id_float, {"mcEventWeights"})
+                      .Define("n_selected_leptons", get_nparticles, {"selected_leptons"})
+
+
 
 
                     ;
   auto nentries = selectors.Count();
   std::cout << "Count events: " <<  *nentries << std::endl;
   std::cout << "Writing snapshot to disk ..." << std::endl;
-  selectors.Snapshot("events", "tree.root",
+  selectors.Snapshot("events", outfilename,
     { 
-      
+      // fcc particles with additional infos
+       /* 
       "zeds",
       "zeds_pt",
       "selected_muons",
       "selected_leptons",
       "selected_electrons",
-      "selected_leptons_pt",
+      "selected_bs",
+      "selected_lights",
       "higgs",
-      "higgs_pt"
+      */
+      "selected_leptons_pt",
+      "higgs_pt",
+      "higgs_m",
+      "nbjets",
+      "njets",
+      "weight"
+
       }
     );
 
