@@ -4,21 +4,12 @@
 #include <TSystem.h>
 
 // FCC event datamodel includes
-//#include "datamodel/MCParticleCollection.h"
-//#include "datamodel/MCParticleData.h"
 #include "datamodel/ParticleData.h"
 #include "datamodel/LorentzVector.h"
 #include "datamodel/JetData.h"
 #include "datamodel/FloatData.h"
 #include "datamodel/TaggedParticleData.h"
 #include "datamodel/TaggedJetData.h"
-
-/*
- * Running from lxplus:
- *   source /cvmfs/sft.cern.ch/lcg/views/dev3/latest/x86_64-slc6-gcc62-opt/setup.sh
- *   g++ -g -o analysis heppyAnalysis.cxx `root-config --cflags --glibs` -lROOTVecOps -lROOTDataFrame
- */
-
 
 
 double deltaR(fcc::LorentzVector v1, fcc::LorentzVector v2) {
@@ -39,12 +30,11 @@ double deltaR(fcc::LorentzVector v1, fcc::LorentzVector v2) {
 int main(int argc, char* argv[]){
 
 
-
-
+   #ifdef ENABLEIMPLICITMT
+   ROOT::EnableImplicitMT();
+   #endif
    // fcc edm libraries
    gSystem->Load("libdatamodel.so");
-   //f1.MakeProject("dictsDelphes", "*", "RECREATE+");
-   //gSystem->Load("dictsDelphes/dictsDelphes.so");
    
 
    std::cout << "Read files.. ";
@@ -54,8 +44,6 @@ int main(int argc, char* argv[]){
    for (int i = 2; i < argc; ++i) {
      std::cout << " " << argv[i];
      filenames.push_back(argv[i]);
-
-
    }
    std::cout << std::endl;
 
@@ -93,6 +81,8 @@ int main(int argc, char* argv[]){
     return result;
    };
 
+  
+   // @todo: refactor to remove code duplication with selectJetsBs
    auto selectJetsLights = [](std::vector<fcc::JetData> in, std::vector<fcc::TaggedJetData> btags) {
     std::vector<fcc::JetData> result;
     result.reserve(in.size());
@@ -129,7 +119,7 @@ int main(int argc, char* argv[]){
     };
 
 
-   auto getPts2 = [](std::vector<fcc::ParticleData> in){
+   auto get_pt = [](std::vector<fcc::ParticleData> in){
      std::vector<float> result;
        for (int i = 0; i < in.size(); ++i) {
          result.push_back(sqrt(in[i].core.p4.px * in[i].core.p4.px + in[i].core.p4.py * in[i].core.p4.py));
@@ -137,9 +127,6 @@ int main(int argc, char* argv[]){
        return result;
    };
 
-   auto id2 = [](std::vector<fcc::ParticleData> x) {
-     return x;
-   };
 
    auto mergeElectronsAndMuons = [](std::vector<fcc::ParticleData> x, std::vector<fcc::ParticleData> y) {
      std::vector<fcc::ParticleData> result;
@@ -181,6 +168,7 @@ int main(int argc, char* argv[]){
     return result;
   };
 
+  /// @todo: refactor to remove code duplication with leptonicZBuilder
   auto LeptonicHiggsBuilder = [](std::vector<fcc::ParticleData> leptons) {
 
         std::vector<fcc::ParticleData> result;
@@ -266,11 +254,11 @@ int main(int argc, char* argv[]){
                       .Define("selected_muons", selectLeptons, {"muons", "muonITags"})
                       .Define("selected_leptons", mergeElectronsAndMuons, {"selected_electrons", "selected_muons"})
                       .Define("zeds", LeptonicZBuilder, {"selected_leptons"})
-                      .Define("selected_leptons_pt", getPts2, {"selected_leptons"})
-                      .Define("zeds_pt", getPts2, {"zeds"})
+                      .Define("selected_leptons_pt", get_pt, {"selected_leptons"})
+                      .Define("zeds_pt", get_pt, {"zeds"})
                       .Define("higgs", LeptonicHiggsBuilder, {"zeds"})
                       .Define("higgs_m", get_mass, {{"higgs"}})
-                      .Define("higgs_pt", getPts2, {"higgs"})
+                      .Define("higgs_pt", get_pt, {"higgs"})
                       .Define("jets_30_bs", selectJetsBs, {"pfjets04", "pfbTags04"})
                       .Define("jets_30_lights", selectJetsLights, {"pfjets04", "pfbTags04"})
                       .Define("selected_bs", noMatchJets, {"jets_30_bs", "selected_leptons"})

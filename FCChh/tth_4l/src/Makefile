@@ -8,6 +8,8 @@ all: tdataframe_analysis
 tdataframe_analysis:  heppyanalysis.cxx
 	g++ -g -o heppyanalysis heppyanalysis.cxx `root-config --cflags --glibs` -lROOTVecOps -lROOTDataFrame  -I/afs/cern.ch/work/v/vavolkl/public/heppy_analysis_samples/fcc-edm/install/include/ -I/afs/cern.ch/work/v/vavolkl/public/heppy_analysis_samples/podio/install/include/ 
 
+tdataframe_analysis_mt:  heppyanalysis.cxx
+	g++ -g -o heppyanalysis heppyanalysis.cxx `root-config --cflags --glibs` -lROOTVecOps -lROOTDataFrame  -I/afs/cern.ch/work/v/vavolkl/public/heppy_analysis_samples/fcc-edm/install/include/ -I/afs/cern.ch/work/v/vavolkl/public/heppy_analysis_samples/podio/install/include/ -DENABLEIMPLICITMT
 
 # run the analysis
 
